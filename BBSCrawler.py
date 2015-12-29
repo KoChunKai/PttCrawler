@@ -6,7 +6,7 @@ import io
 import operator
 
 tn = telnetlib.Telnet('ptt.cc')
-f = open('data.txt', 'w')
+f = open('data.txt', 'a')
 data = []
 userIP = {}
 class Ptt:
@@ -20,23 +20,23 @@ class Ptt:
 		return tn.read_very_eager().decode('big5','ignore')
 
 	def login(self):
-		print("登入中...")
+		print(u'登入中...')
 		content = self.getContent()
-		if "請輸入代號" in content:
+		if u'請輸入代號' in content:
 			tn.write((self.account+"\r\n").encode('big5'))
 			content = self.getContent()
 			tn.write((self.password+"\r\n").encode('big5'))
 			content = self.getContent()
 			self.anykey(content)
-			print("登入成功")
+			print(u'登入成功')
 
 	def anykey(self, content):
-		if "任意鍵" in content:
+		if u'任意鍵' in content:
 			tn.write("\r\n".encode('big5') )
 
 	def checkPage(self, content):
 		#print(content)
-		if "文章網址:" in content:
+		if u'文章網址:' in content:
 			#print("有在文章網址")
 			self.paser(content)
 			#return content
@@ -79,11 +79,12 @@ class Ptt:
 		for line in buf.readlines():
 			lastline = line = line.strip()
 			line = line.split(':')[0]
-			if "噓 " in line or "推 " in line or "→" in line:
+			if u'噓 ' in line or u'推 ' in line or u'→' in line:
 				line = self.replaceASCII(line)
 				if line not in data:
 					data.append(line)
-		if "100%" not in lastline:
+					print(line)
+		if u'100%' not in lastline:
 			#print("還沒100%")
 			self.changePage()
 			self.paser(self.getContent())
@@ -125,21 +126,21 @@ class Ptt:
 	def paserUserIP(self, Id, content):
 		buf = io.StringIO(content)
 		for line in buf.readlines():
-			if "《上次故鄉》" in line:
-				line = line.split("《上次故鄉》")[1]
+			if u'《上次故鄉》' in line:
+				line = line.split(u'《上次故鄉》')[1]
 				u = {Id:line}
-				f.write(Id + ":" + line)
+				#f.write(Id + ":" + line)
 				print(u)
-				#userIP.update(u);
+				userIP.update(u);
 		self.anykey(content)
 
-p = Ptt("", "")
+p = Ptt("account", "password")
 p.login()
 p.goBoard("Gossiping")
 #tn.write("205537\r\n".encode("big5"))#指定去某篇
 tn.write(chr(90).encode("ascii"))#Z 推文數
-tn.write("20\r\n".encode("big5"))#20推
-for i in range(1, 2, +1):
+tn.write("50\r\n".encode("big5"))#20推
+for i in range(1, 3, +1):
 	print("第"+str(i)+"篇")
 	p.read()
 	p.checkPage(p.getContent())
@@ -149,7 +150,13 @@ for x in data:
 	p.searchPage()
 	p.searchUser(x)
 
-#x = sorted(userIP.items(), key=operator.itemgetter(1))
-#for d in x:
-#	print(d)
-	#f.write(d+"\n")
+x = sorted(userIP.items(), key=operator.itemgetter(1))
+i = -1;
+for d in x:
+	if i != -1:
+		if d[1] == x[i][1]:
+			print(d)
+			print(x[i])
+			f.write(x[i][0] + ":" + x[i][1])
+			f.write(d[0] + ":" + d[1])
+	i = i + 1
